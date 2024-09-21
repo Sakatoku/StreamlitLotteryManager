@@ -31,7 +31,7 @@ def update_stock(item_name, new_stock, df=None):
 
     # データフレームが与えられている場合はログを出力する
     if df is not None:
-        item_key = df[df['item_name'] == item_name]['item_id'].values[0]
+        item_key = df[df['item_name'] == item_name]['item_key'].values[0]
         item_stock_before = df[df['item_name'] == item_name]['item_stock'].values[0]
         item_stock_after = new_stock
     cursor.execute(f"INSERT INTO lot_logs (lot_time, item_key, item_stock_before, item_stock_after) VALUES (NOW(), {item_key}, {item_stock_before}, {item_stock_after});")
@@ -43,7 +43,7 @@ connection = connect_to_tidb()
 cursor = connection.cursor()
 cursor.execute("SELECT * FROM items;")
 items = cursor.fetchall()
-df = pd.DataFrame(items, columns=['item_id', 'item_name', 'item_stock'])
+df = pd.DataFrame(items, columns=['item_key', 'item_name', 'item_stock'])
 # データフレームを表示
 st.dataframe(df)
 
