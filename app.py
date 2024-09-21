@@ -3,6 +3,11 @@ import mysql.connector
 import time
 import random
 
+# ページコンフィグ
+st.set_page_config(
+    initial_sidebar_state="collapsed"
+)
+
 # タイトル
 st.title('🎒Streamlit Forumへようこそ🎒')
 
