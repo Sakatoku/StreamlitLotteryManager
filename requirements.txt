@@ -1,0 +1,2 @@
+streamlit==1.38.0
+mysql-connector-python==9.0.0
