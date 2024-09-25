@@ -37,7 +37,30 @@ def update_stock(item_name, new_stock, df=None):
         item_stock_after = new_stock
     cursor.execute(f"INSERT INTO lot_logs (lot_time, item_key, item_stock_before, item_stock_after) VALUES (NOW(), {item_key}, {item_stock_before}, {item_stock_after});")
 
+# itemsテーブルを取得
+@st.cache_data(ttl=30)
+def get_items():
+    connection = connect_to_tidb()
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM items;")
+    items = cursor.fetchall()
+    df = pd.DataFrame(items, columns=['item_key', 'item_name', 'item_stock'])
+    return df
+
+# lot_logsテーブルを先頭からN件だけ取得
+@st.cache_data(ttl=30)
+def get_lot_logs(N=20):
+    connection = connect_to_tidb()
+    cursor = connection.cursor()
+    cursor.execute(f"SELECT * FROM lot_logs ORDER BY lot_time DESC LIMIT {N};")
+    lot_logs = cursor.fetchall()
+    df = pd.DataFrame(lot_logs, columns=['lot_time', 'item_key', 'item_stock_before', 'item_stock_after'])
+    # df_logsはUTC時間なので9時間足してJSTに変換
+    df['lot_time'] = pd.to_datetime(df['lot_time']) + pd.Timedelta(hours=9)
+    return df
+
 # ログ数を1時間ごとに集計する
+@st.cache_data(ttl=60)
 def aggregate_logs():
     connection = connect_to_tidb()
     cursor = connection.cursor()
@@ -60,23 +83,15 @@ st.bar_chart(df_logs.set_index('lot_hour'))
 st.subheader('在庫確認')
 
 # itemsテーブルをすべて取得してデータフレームに格納
-connection = connect_to_tidb()
-cursor = connection.cursor()
-cursor.execute("SELECT * FROM items;")
-items = cursor.fetchall()
-df = pd.DataFrame(items, columns=['item_key', 'item_name', 'item_stock'])
+df = get_items()
 # データフレームを表示
 st.dataframe(df)
 
 st.subheader('抽選ログ')
 
 with st.expander('抽選ログを表示'):
-    # lot_logsテーブルを新しい方から20件取得してデータフレームに格納
-    cursor.execute("SELECT * FROM lot_logs ORDER BY lot_time DESC LIMIT 20;")
-    lot_logs = cursor.fetchall()
-    df_logs = pd.DataFrame(lot_logs, columns=['lot_time', 'item_key', 'item_stock_before', 'item_stock_after'])
-    # df_logsはUTC時間なので9時間足してJSTに変換
-    df_logs['lot_time'] = pd.to_datetime(df_logs['lot_time']) + pd.Timedelta(hours=9)
+    # lot_logsテーブルを20件取得してデータフレームに格納
+    df_logs = get_lot_logs()
     # データフレームを表示
     st.dataframe(df_logs)
 
