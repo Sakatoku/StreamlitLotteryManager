@@ -7,6 +7,10 @@ import time
 st.title('管理コンソール')
 st.subheader('PyCon JP 2024 Streamlitブース')
 
+# 更新ボタン
+if st.button('リロード'):
+    st.rerun()
+
 # Connect to TiDB
 @st.cache_resource(ttl=600)
 def connect_to_tidb(autocommit=True):
